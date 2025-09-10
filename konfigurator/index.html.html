@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Schlosserei Chromik GbR – Konfigurator</title>
+  <meta name="description" content="In 3 Schritten zum Angebot – Schlosserei Chromik GbR" />
+  <!-- Tailwind Play CDN (keine Build-Tools nötig) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- html2pdf (PDF-Export) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" integrity="sha512-YcsIPGdhGZ7CwQpPrmMEX2YvLzR5Qb7qkK3jK5jv7xwhnHhNtJzq8o6cWk2QW1LmkOqg3Qk9n0pD7JfZ8Gk5sw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <style>
+    :root { --brand:#1f2937; }
+    .card { @apply bg-white rounded-2xl shadow-sm border border-gray-200; }
+    .btn { @apply inline-flex items-center justify-center rounded-xl px-4 py-2 font-medium border border-gray-300 hover:border-gray-400 transition; }
+    .btn-primary { @apply bg-gray-900 text-white border-gray-900 hover:bg-black; }
+    .btn-ghost { @apply bg-white text-gray-700; }
+    .kachel { @apply card p-4 hover:shadow-md cursor-pointer ring-0 focus:outline-none focus:ring-2 focus:ring-gray-700; }
+    .badge { @apply text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-700; }
+    .hint { @apply text-sm text-gray-600; }
+    .label { @apply block text-sm font-medium text-gray-700 mb-1; }
+    .input { @apply w-full rounded-xl border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-700; }
+    .select { @apply w-full rounded-xl border border-gray-300 px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-gray-700; }
+    .checkbox { @apply h-4 w-4 rounded border-gray-300 text-gray-900 focus:ring-gray-700; }
+  </style>
+</head>
+<body class="bg-gray-50 text-gray-900">
+  <div class="max-w-6xl mx-auto p-4 sm:p-6 lg:p-8">
+    <!-- HEADER / BRAND -->
+    <header class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+      <div class="flex items-center gap-3">
+        <!-- Platzhalter-Logo: Ersetzen Sie die Quelle durch Ihr echtes Logo falls gewünscht -->
+        <div class="w-12 h-12 rounded-xl bg-gray-900 text-white grid place-content-center text-lg font-bold">SC</div>
+        <div>
+          <h1 class="text-xl sm:text-2xl font-semibold">Schlosserei Chromik GbR – Konfigurator</h1>
+          <p class="text-sm text-gray-600">Alles aus Metall – maßgeschneidert für Ihr Projekt</p>
+        </div>
+      </div>
+      <div class="text-sm text-gray-700">
+        Bilder & Referenzen finden Sie auf Instagram:
+        <a class="underline font-medium" href="https://www.instagram.com/schlosserei_chromik_gbr" target="_blank" rel="noopener">@schlosserei_chromik_gbr</a>
+      </div>
+    </header>
+
+    <!-- STEPPER -->
+    <nav class="grid grid-cols-2 md:grid-cols-6 gap-2 mb-6">
+      <div class="card p-2 text-center" data-step-indicator="0"><div class="text-xs">Start</div><div class="font-medium">Ziel & Nutzen</div></div>
+      <div class="card p-2 text-center" data-step-indicator="1"><div class="text-xs">Schritt 1</div><div class="font-medium">Produktauswahl</div></div>
+      <div class="card p-2 text-center" data-step-indicator="2"><div class="text-xs">Schritt 2</div><div class="font-medium">Projektdaten</div></div>
+      <div class="card p-2 text-center" data-step-indicator="3"><div class="text-xs">Schritt 3</div><div class="font-medium">Produktspezifika</div></div>
+      <div class="card p-2 text-center" data-step-indicator="4"><div class="text-xs">Schritt 4</div><div class="font-medium">Preis & Summary</div></div>
+      <div class="card p-2 text-center" data-step-indicator="5"><div class="text-xs">Finish</div><div class="font-medium">Erfolg</div></div>
+    </nav>
+
+    <!-- APP ROOT -->
+    <main id="app" class="space-y-6"></main>
+
+    <!-- FOOTER -->
+    <footer class="mt-10 text-sm text-gray-600">
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+        <div>
+          <span class="font-medium">Schlosserei Chromik GbR</span> · Geislingen an der Steige · Tel. +49 · E-Mail: info@schlosserei-chromik.de · Website: www.schlosserei-chromik.de
+        </div>
+        <div>
+          Qualitätsversprechen: Fertigung in Baden-Württemberg · Langlebige Materialien · Maßarbeit · <span class="badge">max. 50 km Radius</span>
+        </div>
+      </div>
+      <div class="mt-2">Hinweis: Keine Großbauten; private & kleinere gewerbliche Projekte im Umkreis 50 km.</div>
+    </footer>
+  </div>
+
+  <script>
+  // --- Minimaler State- und Router-Helper (ohne Framework) ---
+  const $app = document.getElementById('app');
+  const formatEuro = (v) => new Intl.NumberFormat('de-DE',{style:'currency',currency:'EUR'}).format(v||0);
+  const clampNum = (n,min,max)=>Math.max(min,Math.min(max,n||0));
+  const state = {
+    step: 0,
+    produkt: '',
+    projekt: {
+      name: '', ort: '', plz: '', kontakt: { vorname:'', nachname:'', email:'', telefon:'' },
+      typ: 'Privat', freitext: '', fotos: []
+    },
+    spezifika: {},
+    upgrades: { ralPulver:false, glasStattStaebe:false, premiumHandlauf:false, demontageAlt:false },
+    preis: {
+      material: 0, fertigungMeister: 0, fertigungGeselle: 0, oberflaeche: 0, montage: 0,
+      summeNetto: 0, mwst: 0, summeBrutto: 0
+    },
+    meta: { link:'', projektId: '' }
+  };
+
+  // Deep-Link: State ↔ URL
+  function encodeState(){
+    const data = btoa(unescape(encodeURIComponent(JSON.stringify(state))));
+    const url = new URL(location.href);
+    url.searchParams.set('data', data);
+    state.meta.link = url.toString();
+    return state.meta.link;
+  }
+  function tryLoadStateFromURL(){
+    const url = new URL(location.href);
+    const d = url.searchParams.get('data');
+    if(!d) return false;
+    try{ const parsed = JSON.parse(decodeURIComponent(escape(atob(d)))); Object.assign(state, parsed); return true; }catch(e){ return false; }
+  }
+
+  function setStep(i){ state.step = i; render(); scrollTo({top:0,behavior:'smooth'}); }
+  function next(){ setStep(state.step+1); }
+  function back(){ setStep(Math.max(0, state.step-1)); }
+
+  function update(path, value){
+    // Pfad wie "projekt.name" oder "spezifika.treppe.typ"
+    const keys = path.split('.');
+    let ref = state;
+    for(let i=0;i<keys.length-1;i++){ const k = keys[i]; if(!(k in ref)) ref[k]={}; ref = ref[k]; }
+    ref[keys[keys.length-1]] = value;
+  }
+
+  // Preis-Kalkulation (vereinfachte Heuristik mit Meister/Geselle – anpassbar)
+  function kalkulierePreis(){
+    const MEISTER = 69; // €/h
+    const GESELLE = 57; // €/h
+
+    let material = 0, meister = 0, geselle = 0, oberflaeche = 0, montage = 0;
+
+    const p = state.produkt;
+    const s = state.spezifika;
+
+    if(p === 'Treppe'){
+      // grobe Faustwerte je nach Laufbreite/Anzahl Stufen
+      const lw = Number(s.treppe?.laufbreite||900);
+      const stufen = Number(s.treppe?.anzStufen||12);
+      material += 1200 + (stufen*80) + (lw-800)*0.8;
+      meister += 2.5; // h
+      geselle += 18;  // h
+      if(s.treppe?.oberflaeche==='verzinkt') oberflaeche += 10*stufen;
+      if(s.treppe?.oberflaeche==='pulverbeschichtet') oberflaeche += 20*stufen;
+      montage += 450; // pauschal (Anfahrt + Hebezeuge optional)
+      if(s.treppe?.gelaender==='Ja') { material += 350; geselle += 6; }
+    }
+    if(p === 'Geländer'){
+      const laenge = Number(s.gelaender?.laenge||3);
+      material += 180*laenge; // €/lfm Grundrahmen
+      geselle += 2.2*laenge; // h/lfm
+      if(s.gelaender?.fuellung==='Glas') { material += 120*laenge; meister += 0.3*laenge; }
+      if(s.gelaender?.oberflaeche==='verzinkt') oberflaeche += 25*laenge;
+      if(s.gelaender?.oberflaeche==='pulverbeschichtet') oberflaeche += 45*laenge;
+      montage += 120*laenge;
+    }
+    if(p === 'Balkon/Anbaubalkon'){
+      const L = Number(s.balkon?.laenge||4000)/1000; // m
+      const B = Number(s.balkon?.breite||2000)/1000; // m
+      const flaeche = L*B;
+      material += 900*flaeche + 500; // Unterkonstruktion + Kleinteile
+      meister += 3;
+      geselle += 24;
+      if(s.balkon?.oberflaeche==='verzinkt') oberflaeche += 25*flaeche*10;
+      if(s.balkon?.oberflaeche==='pulverbeschichtet') oberflaeche += 45*flaeche*10;
+      montage += 850;
+    }
+    if(p === 'Vordach'){
+      const L = Number(s.vordach?.laenge||2000)/1000;
+      const T = Number(s.vordach?.tiefe||1000)/1000;
+      material += 350*L + 200*T + 200; // Glas/Poly + Konsolen grob
+      geselle += 8; meister += 1.5; montage += 350;
+      if(s.vordach?.oberflaeche==='verzinkt') oberflaeche += 80;
+      if(s.vordach?.oberflaeche==='pulverbeschichtet') oberflaeche += 140;
+    }
+    if(p === 'Glas'){
+      const qm = Number(s.glas?.flaecheQM||2);
+      material += 220*qm; geselle += 4*qm; montage += 100*qm;
+    }
+
+    // Upgrades
+    if(state.upgrades.ralPulver) oberflaeche += 220;
+    if(state.upgrades.glasStattStaebe) material += 180;
+    if(state.upgrades.premiumHandlauf) material += 90;
+    if(state.upgrades.demontageAlt) montage += 180;
+
+    const fertigungMeister = meister*MEISTER;
+    const fertigungGeselle = geselle*GESELLE;
+
+    const summeNetto = material + fertigungMeister + fertigungGeselle + oberflaeche + montage;
+    const mwst = summeNetto * 0.19;
+    const summeBrutto = summeNetto + mwst;
+
+    state.preis = { material, fertigungMeister, fertigungGeselle, oberflaeche, montage, summeNetto, mwst, summeBrutto };
+  }
+
+  // Validierung (vereinfacht)
+  function validateStep2(){
+    return !!state.produkt;
+  }
+  function validateStep3(){
+    const hasKontakt = (state.projekt.kontakt.email?.trim()||'') || (state.projekt.kontakt.telefon?.trim()||'');
+    const hasPLZ = (state.projekt.plz||'').trim().length >= 4;
+    return state.projekt.name?.trim() && hasPLZ && hasKontakt;
+  }
+
+  // Datei-Uploads -> DataURL
+  function handleFotos(files){
+    const readers = [];
+    for(const f of files){
+      const reader = new FileReader();
+      readers.push(new Promise(res=>{ reader.onload = ()=> res(reader.result); reader.readAsDataURL(f); }));
+    }
+    Promise.all(readers).then(list=>{ state.projekt.fotos.push(...list); render(); });
+  }
+
+  // UI Helpers
+  function Section({title, right='', body=''}){
+    return `
+      <section class="card p-5">
+        <div class="flex items-start justify-between gap-4 mb-4">
+          <h2 class="text-lg font-semibold">${title}</h2>
+          ${right}
+        </div>
+        <div class="space-y-3">${body}</div>
+      </section>
+    `;
+  }
+
+  // Screens
+  function ScreenStart(){
+    const hasDeepLink = tryLoadStateFromURL();
+    const deepLinkBanner = hasDeepLink ? `
+      <div class="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800">
+        Ein gespeichertes Projekt wurde im Link erkannt. Sie können es unten mit <b>„Projekt laden“</b> fortsetzen.
+      </div>`:'';
+
+    return `
+      ${Section({
+        title: 'In 3 Schritten zum Angebot – Schlosserei Chromik GbR',
+        right: `<span class=badge>Beta</span>`,
+        body: `
+          <p class="text-gray-700">Treppen, Geländer, Balkone, Vordächer, Glas, <span class="italic">Sonderbau nach Anfrage</span> – passgenau für Ihr Projekt.</p>
+          <p class="hint">Hinweis: Bilder & Inspiration auf Instagram <a class="underline" target="_blank" href="https://www.instagram.com/schlosserei_chromik_gbr">@schlosserei_chromik_gbr</a>.</p>
+          ${deepLinkBanner}
+          <div class="flex flex-wrap gap-3 pt-1">
+            <button class="btn btn-primary" onclick="setStep(1)">Konfiguration starten</button>
+            <button class="btn btn-ghost" onclick="setStep(2)">Projekt laden</button>
+          </div>
+        `
+      })}
+    `;
+  }
+
+  function ScreenProduktauswahl(){
+    const kachel = (key, title, desc)=>`
+      <button class="kachel" onclick="update('produkt','${key}'); render();" aria-label="${title}">
+        <div class="text-base font-medium mb-1">${title}</div>
+        <div class="text-sm text-gray-600">${desc}</div>
+        ${state.produkt===key?'<div class="mt-2 badge">gewählt</div>':''}
+      </button>`;
+
+    return `
+      ${Section({
+        title: 'Was möchten Sie konfigurieren?',
+        body: `
+          <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            ${kachel('Treppe','Treppe','Gerade, Podest, Wendel; Stahl, mit Aluminium‑Dielen/WPC-/Holz-/Steinstufen')}
+            ${kachel('Geländer','Geländer','Innen/Außen; Stahl/Edelstahl; Stäbe/Glas/Blech')}
+            ${kachel('Balkon/Anbaubalkon','Balkon/Anbaubalkon','Anbaubalkon, Plattform, Unterkonstruktion')}
+            ${kachel('Vordach','Vordach','Pult-/Sattelform; Glas/Polycarbonat; Wandkonsolen')}
+            ${kachel('Glas','Glas (Einzelposition)','Brüstung, Füllung, Stufen, Sichtschutz')}
+          </div>
+          <p class="hint">Unsicher? Wählen Sie die Kategorie, die am ehesten passt. Details folgen im nächsten Schritt.</p>
+          <div class="flex gap-3 pt-2">
+            <button class="btn" onclick="back()">Zurück</button>
+            <button class="btn btn-primary" ${!validateStep2()?'disabled':''} onclick="setStep(2)">Weiter</button>
+          </div>
+        `
+      })}
+    `;
+  }
+
+  function ScreenProjektdaten(){
+    const p = state.projekt;
+    return `
+      ${Section({
+        title: 'Projektdaten',
+        body: `
+          <div class="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label class="label">Projektname <span class="text-red-600">*</span></label>
+              <input class="input" value="${p.name||''}" placeholder="z. B. Balkon Familie Müller" oninput="update('projekt.name', this.value)"/>
+            </div>
+            <div>
+              <label class="label">Einsatzort – PLZ <span class="text-red-600">*</span></label>
+              <input class="input" value="${p.plz||''}" placeholder="73312" oninput="update('projekt.plz', this.value)"/>
+              <p class="hint">PLZ erforderlich für grobe Liefer-/Montagekalkulation. <span class="badge">Umkreis 50 km</span></p>
+            </div>
+            <div>
+              <label class="label">Einsatzort – Ort</label>
+              <input class="input" value="${p.ort||''}" placeholder="Geislingen an der Steige" oninput="update('projekt.ort', this.value)"/>
+            </div>
+            <div>
+              <label class="label">Baustellentyp</label>
+              <select class="select" onchange="update('projekt.typ', this.value)">
+                ${['Privat','Gewerblich','Architekt'].map(v=>`<option ${p.typ===v?'selected':''}>${v}</option>`).join('')}
+              </select>
+            </div>
+          </div>
+
+          <div class="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label class="label">Vorname</label>
+              <input class="input" value="${p.kontakt.vorname||''}" oninput="update('projekt.kontakt.vorname', this.value)"/>
+            </div>
+            <div>
+              <label class="label">Nachname</label>
+              <input class="input" value="${p.kontakt.nachname||''}" oninput="update('projekt.kontakt.nachname', this.value)"/>
+            </div>
+            <div>
+              <label class="label">E‑Mail ${!p.kontakt.telefon?'<span class="text-red-600">*</span>':''}</label>
+              <input class="input" type="email" value="${p.kontakt.email||''}" oninput="update('projekt.kontakt.email', this.value)"/>
+            </div>
+            <div>
+              <label class="label">Telefon ${!p.kontakt.email?'<span class="text-red-600">*</span>':''}</label>
+              <input class="input" value="${p.kontakt.telefon||''}" oninput="update('projekt.kontakt.telefon', this.value)"/>
+            </div>
+          </div>
+
+          <div>
+            <label class="label">Fotos hochladen (optional)</label>
+            <input class="input" type="file" accept="image/*" multiple onchange="handleFotos(this.files)"/>
+            <p class="hint">Bestehende Situation, Skizze, Maße</p>
+            <div class="mt-3 grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-2">
+              ${(p.fotos||[]).map(src=>`<img src="${src}" class="w-full h-24 object-cover rounded-xl border"/>`).join('')}
+            </div>
+          </div>
+
+          <div>
+            <label class="label">Besonderheiten</label>
+            <textarea class="input" rows="3" placeholder="Zugang, Hanglage, Denkmalschutz, Etagen, Kranzugang, Demontage Altanlage, ..." oninput="update('projekt.freitext', this.value)">${p.freitext||''}</textarea>
+          </div>
+
+          <div class="hint">Mikrocopy: Bitte mindestens eine Kontaktmethode angeben. PLZ erforderlich für grobe Liefer-/Montagekalkulation.</div>
+
+          <div class="flex gap-3 pt-2">
+            <button class="btn" onclick="back()">Zurück</button>
+            <button class="btn btn-primary" ${!validateStep3()?'disabled':''} onclick="setStep(3)">Weiter</button>
+          </div>
+        `
+      })}
+    `;
+  }
+
+  // Produktspezifika – Teilformen
+  function FormTreppe(){
+    const s = state.spezifika.treppe||{};
+    return `
+      <div class="grid gap-4 sm:grid-cols-2">
+        <div>
+          <label class="label">Treppen‑Typ</label>
+          <select class="select" onchange="update('spezifika.treppe.typ', this.value)">
+            ${['Gerade','1x Podest','2x Podest','Viertelwange','Spindel'].map(v=>`<option ${s.typ===v?'selected':''}>${v}</option>`).join('')}
+          </select>
+        </div>
+        <div>
+          <label class="label">Laufbreite (mm)</label>
+          <input class="input" type="number" value="${s.laufbreite||900}" min="600" max="1400" oninput="update('spezifika.treppe.laufbreite', Number(this.value))"/>
+          <p class="hint">Empfehlung: ≥ 800 mm</p>
+        </div>
+        <div>
+          <label class="label">Geschosshöhe (mm)</label>
+          <input class="input" type="number" value="${s.geschosshoehe||2800}" oninput="update('spezifika.treppe.geschosshoehe', Number(this.value))"/>
+        </div>
+        <div>
+          <label class="label">Anzahl Stufen</label>
+          <input class="input" type="number" value="${s.anzStufen||12}" min="6" max="22" oninput="update('spezifika.treppe.anzStufen', Number(this.value))"/>
+        </div>
+        <div>
+          <label class="label">Stufenmaterial</label>
+          <select class="select" onchange="update('spezifika.treppe.stufen', this.value)">
+            ${['Gitterrost','Blech','Holz','WPC'].map(v=>`<option ${s.stufen===v?'selected':''}>${v}</option>`).join('')}
+          </select>
+        </div>
+        <div>
+          <label class="label">Wangen/Träger</label>
+          <select class="select" onchange="update('spezifika.treppe.traeger', this.value)">
+            ${['U','I','Platte','Empfehlung'].map(v=>`<option ${s.traeger===v?'selected':''}>${v}</option>`).join('')}
+          </select>
+          <p class="hint">Wenn unklar: „Empfehlung“ wählen.</p>
+        </div>
+        <div>
+          <label class="label">Geländer an Treppe</label>
+          <select class="select" onchange="update('spezifika.treppe.gelaender', this.value)">
+            ${['Nein','Ja'].map(v=>`<option ${s.gelaender===v?'selected':''}>${v}</option>`).join('')}
+          </select>
+        </div>
+        <div>
+          <label class="label">Oberfläche</label>
+          <select class="select" onchange="update('spezifika.treppe.oberflaeche', this.value)">
+            ${['roh','verzinkt','pulverbeschichtet'].map(v=>`<option ${s.oberflaeche===v?'selected':''}>${v}</option>`).join('')}
+          </select>
+          <input class="input mt-2" placeholder="RAL (bei Pulverbeschichtung)" value="${s.ral||''}" oninput="update('spezifika.treppe.ral', this.value)"/>
+        </div>
+        <div class="sm:col-span-2">
+          <label class="label">Liefer-/Montagebedingungen</label>
+          <input class="input" placeholder="Kranzugang? Etagen? Demontage Altanlage?" value="${s.lmb||''}" oninput="update('spezifika.treppe.lmb', this.value)"/>
+        </div>
+      </div>
+    `;
+  }
+
+  function NormHinweisGelaender(){
+    return `
+      <div class="p-3 rounded-xl bg-yellow-50 border border-yellow-200 text-yellow-900">
+        <b>Normhinweis (vereinfachte Übersicht):</b>
+        <ul class="list-disc ml-5 mt-1 space-y-1 text-sm">
+          <li>Innen (Wohngebäude): i. d. R. <b>≥ 900 mm</b> Geländerhöhe.</li>
+          <li>Arbeitsstätten/Verkehrswege: <b>≥ 1000 mm</b>; bei Absturzhöhen <b>&gt; 12 m</b>: <b>≥ 1100 mm</b>.</li>
+          <li>Balkone/außen: meist <b>1000 mm</b>, teils 900 mm; ab ca. <b>&gt; 12 m</b> Höhenunterschied oft <b>1100 mm</b> (Landesbauordnung beachten).</li>
+          <li>Kinderschutz: lichte Öffnungen ≤ 12 cm; horizontale Gurte vermeiden bzw. <i>Leitereffekt</i> erschweren.</li>
+        </ul>
+        <div class="text-xs mt-2">Quelle: DIN 18065/landesrechtliche Vorgaben sowie ASR A1.8 (vereinfacht). Die endgültige Norm-/Statikprüfung erfolgt durch uns.</div>
+      </div>
+    `;
+  }
+
+  function FormGelaender(){
+    const s = state.spezifika.gelaender||{};
+    return `
+      ${NormHinweisGelaender()}
+      <div class="grid gap-4 sm:grid-cols-2 mt-3">
+        <div>
+          <label class="label">Einsatz</label>
+          <select class="select" onchange="update('spezifika.gelaender.einsatz', this.value)">
+            ${['Innen','Außen','Balkon','Treppe'].map(v=>`<option ${s.einsatz===v?'selected':''}>${v}</option>`).join('')}
+          </select>
+        </div>
+        <div>
+          <label class="label">Füllung</label>
+          <select class="select" onchange="update('spezifika.gelaender.fuellung', this.value)">
+            ${['Stäbe','Glas','Lochblech','Blech glatt','Streckmetall'].map(v=>`<option ${s.fuellung===v?'selected':''}>${v}</option>`).join('')}
+          </select>
+        </div>
+        <div>
+          <label class="label">Pfostenprofil</label>
+          <select class="select" onchange="update('spezifika.gelaender.pfosten', this.value)">
+            ${['40×40×3','42,4 mm Rund','Empfehlung'].map(v=>`<option ${s.pfosten===v?'selected':''}>${v}</option>`).join('')}
+          </select>
+        </div>
+        <div>
+          <label class="label">Handlauf</label>
+          <select class="select" onchange="update('spezifika.gelaender.handlauf', this.value)">
+            ${['42,4 mm Rund','Rechteck','Holzhandlauf'].map(v=>`<option ${s.handlauf===v?'selected':''}>${v}</option>`).join('')}
+          </select>
+        </div>
+        <div>
+          <label class="label">Höhe (mm)</label>
+          <input class="input" type="number" value="${s.hoehe||1000}" oninput="update('spezifika.gelaender.hoehe', Number(this.value))"/>
+          <p class="hint">Standard: 900 mm innen, 1000 mm außen (je nach Nutzung/Bundesland; endgültige Prüfung erfolgt durch uns).</p>
+        </div>
+        <div>
+          <label class="label">Befestigung</label>
+          <select class="select" onchange="update('spezifika.gelaender.befestigung', this.value)">
+            ${['aufgesetzt','stirnseitig','seitlich Konsolen'].map(v=>`<option ${s.befestigung===v?'selected':''}>${v}</option>`).join('')}
+          </select>
+        </div>
+        <div>
+          <label class="label">Länge (lfm)</label>
+          <input class="input" type="number" value="${s.laenge||3}" step="0.1" min="0.5" oninput="update('spezifika.gelaender.laenge', Number(this.value))"/>
+        </div>
+        <div>
+          <label class="label">Oberfläche</label>
+          <select class="select" onchange="update('spezifika.gelaender.oberflaeche', this.value)">
+            ${['roh','verzinkt','pulverbeschichtet'].map(v=>`<option ${s.oberflaeche===v?'selected':''}>${v}</option>`).join('')}
+          </select>
+          <input class="input mt-2" placeholder="RAL (bei Pulverbeschichtung)" value="${s.ral||''}" oninput="update('spezifika.gelaender.ral', this.value)"/>
+        </div>
+      </div>
+    `;
+  }
+
+  function FormBalkon(){
+    const s = state.spezifika.balkon||{};
+    return `
+      <div class="grid gap-4 sm:grid-cols-2">
+        <div>
+          <label class="label">Grundmaß Länge (mm)</label>
+          <input class="input" type="number" value="${s.laenge||4000}" oninput="update('spezifika.balkon.laenge', Number(this.value))"/>
+        </div>
+        <div>
+          <label class="label">Grundmaß Breite (mm)</label>
+          <input class="input" type="number" value="${s.breite||2000}" oninput="update('spezifika.balkon.breite', Number(this.value))"/>
+        </div>
+        <div>
+          <label class="label">Unterkonstruktion</label>
+          <select class="select" onchange="update('spezifika.balkon.uk', this.value)">
+            ${['IPE 160','HEA ...','Quadratrohr 100x100x5','Empfehlung'].map(v=>`<option ${s.uk===v?'selected':''}>${v}</option>`).join('')}
+          </select>
+        </div>
+        <div>
+          <label class="label">Stützen</label>
+          <select class="select" onchange="update('spezifika.balkon.stuetzen', this.value)">
+            ${['Ja','Nein'].map(v=>`<option ${s.stuetzen===v?'selected':''}>${v}</option>`).join('')}
+          </select>
+        </div>
+        <div>
+          <label class="label">Belag</label>
+          <select class="select" onchange="update('spezifika.balkon.belag', this.value)">
+            ${['Alu-Dielen (RAL 9007)','Holz (bauseits)','Gitterrost','Blech'].map(v=>`<option ${s.belag===v?'selected':''}>${v}</option>`).join('')}
+          </select>
+        </div>
+        <div>
+          <label class="label">Geländer</label>
+          <select class="select" onchange="update('spezifika.balkon.gelaender', this.value)">
+            ${['keins','wie oben (Optionen)','Stäbe','Glas'].map(v=>`<option ${s.gelaender===v?'selected':''}>${v}</option>`).join('')}
+          </select>
+        </div>
+        <div>
+          <label class="label">Anschluss an Bestand</label>
+          <select class="select" onchange="update('spezifika.balkon.anschluss', this.value)">
+            ${['Befestigung am Beton','Konsolen','Vor-Ort-Prüfung (Dübeltyp unbekannt)'].map(v=>`<option ${s.anschluss===v?'selected':''}>${v}</option>`).join('')}
+          </select>
+        </div>
+        <div>
+          <label class="label">Oberfläche</label>
+          <select class="select" onchange="update('spezifika.balkon.oberflaeche', this.value)">
+            ${['verzinkt','pulverbeschichtet (RAL 7015 empfohlen)'].map(v=>`<option ${s.oberflaeche===v?'selected':''}>${v}</option>`).join('')}
+          </select>
+        </div>
+        <div class="sm:col-span-2">
+          <label class="label">Zugang/Abdichtung</label>
+          <input class="input" placeholder="Bestehende Tür? Brüstungshöhe? Abdichtung?" value="${s.zugang||''}" oninput="update('spezifika.balkon.zugang', this.value)"/>
+        </div>
+      </div>
+    `;
+  }
+
+  function FormVordach(){
+    const s = state.spezifika.vordach||{};
+    return `
+      <div class="grid gap-4 sm:grid-cols-2">
+        <div>
+          <label class="label">Form</label>
+          <select class="select" onchange="update('spezifika.vordach.form', this.value)">
+            ${['Pult','Sattel','Segmentbogen'].map(v=>`<option ${s.form===v?'selected':''}>${v}</option>`).join('')}
+          </select>
+        </div>
+        <div>
+          <label class="label">Verglasung/Platte</label>
+          <select class="select" onchange="update('spezifika.vordach.verglasung', this.value)">
+            ${['ESG/VSG Glas','Polycarbonat'].map(v=>`<option ${s.verglasung===v?'selected':''}>${v}</option>`).join('')}
+          </select>
+        </div>
+        <div>
+          <label class="label">Maße Länge (mm)</label>
+          <input class="input" type="number" value="${s.laenge||2000}" oninput="update('spezifika.vordach.laenge', Number(this.value))"/>
+        </div>
+        <div>
+          <label class="label">Maße Tiefe (mm)</label>
+          <input class="input" type="number" value="${s.tiefe||1000}" oninput="update('spezifika.vordach.tiefe', Number(this.value))"/>
+        </div>
+        <div>
+          <label class="label">Konsolen</label>
+          <select class="select" onchange="update('spezifika.vordach.konsolen', this.value)">
+            ${['Design A','Design B','Design C'].map(v=>`<option ${s.konsolen===v?'selected':''}>${v}</option>`).join('')}
+          </select>
+        </div>
+        <div>
+          <label class="label">Wasserablauf</label>
+          <select class="select" onchange="update('spezifika.vordach.wasser', this.value)">
+            ${['Tropfkante','Regenrinne'].map(v=>`<option ${s.wasser===v?'selected':''}>${v}</option>`).join('')}
+          </select>
+        </div>
+        <div>
+          <label class="label">Oberfläche Stahlteile</label>
+          <select class="select" onchange="update('spezifika.vordach.oberflaeche', this.value)">
+            ${['verzinkt','pulverbeschichtet'].map(v=>`<option ${s.oberflaeche===v?'selected':''}>${v}</option>`).join('')}
+          </select>
+        </div>
+      </div>
+    `;
+  }
+
+  function FormGlas(){
+    const s = state.spezifika.glas||{};
+    return `
+      <div class="grid gap-4 sm:grid-cols-2">
+        <div>
+          <label class="label">Art</label>
+          <select class="select" onchange="update('spezifika.glas.art', this.value)">
+            ${['Brüstung','Seitenteil','Stufe','Sichtschutz'].map(v=>`<option ${s.art===v?'selected':''}>${v}</option>`).join('')}
+          </select>
+        </div>
+        <div>
+          <label class="label">Fläche (m²)</label>
+          <input class="input" type="number" step="0.1" value="${s.flaecheQM||2}" oninput="update('spezifika.glas.flaecheQM', Number(this.value))"/>
+        </div>
+        <div>
+          <label class="label">Glasaufbau</label>
+          <input class="input" placeholder="z. B. VSG 16,76" value="${s.aufbau||''}" oninput="update('spezifika.glas.aufbau', this.value)"/>
+        </div>
+        <div>
+          <label class="label">Beschläge/Schiene</label>
+          <select class="select" onchange="update('spezifika.glas.beschlag', this.value)">
+            ${['Punktsystem','Schienensystem'].map(v=>`<option ${s.beschlag===v?'selected':''}>${v}</option>`).join('')}
+          </select>
+        </div>
+        <div>
+          <label class="label">Kantenbearbeitung</label>
+          <select class="select" onchange="update('spezifika.glas.kante', this.value)">
+            ${['poliert','geschliffen'].map(v=>`<option ${s.kante===v?'selected':''}>${v}</option>`).join('')}
+          </select>
+        </div>
+      </div>
+      <div class="hint mt-2">Wenn Maße unsicher sind: „Schätzmaß“ wählen – wir prüfen beim Aufmaß. Sicherheitsrelevante Details werden normgerecht ausgelegt (DIN/EN).</div>
+    `;
+  }
+
+  function ScreenSpezifika(){
+    // Initialisiere Objekte
+    if(state.produkt==='Treppe' && !state.spezifika.treppe) state.spezifika.treppe={};
+    if(state.produkt==='Geländer' && !state.spezifika.gelaender) state.spezifika.gelaender={};
+    if(state.produkt==='Balkon/Anbaubalkon' && !state.spezifika.balkon) state.spezifika.balkon={};
+    if(state.produkt==='Vordach' && !state.spezifika.vordach) state.spezifika.vordach={};
+    if(state.produkt==='Glas' && !state.spezifika.glas) state.spezifika.glas={};
+
+    const body = {
+      'Treppe': FormTreppe(),
+      'Geländer': FormGelaender(),
+      'Balkon/Anbaubalkon': FormBalkon(),
+      'Vordach': FormVordach(),
+      'Glas': FormGlas(),
+    }[state.produkt] || '<div class="text-sm">Bitte eine Kategorie wählen.</div>';
+
+    return `
+      ${Section({
+        title: `Produktspezifika – ${state.produkt||''}`,
+        body: `
+          ${body}
+          <div class="mt-4">
+            <div class="label">Optionale Upgrades</div>
+            <div class="grid sm:grid-cols-2 gap-x-4 gap-y-2">
+              <label class="flex items-center gap-2"><input class="checkbox" type="checkbox" ${state.upgrades.ralPulver?'checked':''} onchange="update('upgrades.ralPulver', this.checked)"> RAL‑Pulverbeschichtung</label>
+              <label class="flex items-center gap-2"><input class="checkbox" type="checkbox" ${state.upgrades.glasStattStaebe?'checked':''} onchange="update('upgrades.glasStattStaebe', this.checked)"> Glasfüllung statt Stäben</label>
+              <label class="flex items-center gap-2"><input class="checkbox" type="checkbox" ${state.upgrades.premiumHandlauf?'checked':''} onchange="update('upgrades.premiumHandlauf', this.checked)"> Premium‑Handlauf</label>
+              <label class="flex items-center gap-2"><input class="checkbox" type="checkbox" ${state.upgrades.demontageAlt?'checked':''} onchange="update('upgrades.demontageAlt', this.checked)"> Demontage/Entsorgung Altanlage</label>
+            </div>
+          </div>
+
+          <div class="flex gap-3 pt-4">
+            <button class="btn" onclick="back()">Zurück</button>
+            <button class="btn btn-primary" onclick="setStep(4)">Weiter</button>
+          </div>
+        `
+      })}
+    `;
+  }
+
+  function SummaryBox(label, value){
+    return `<div class="flex items-center justify-between py-1"><span class="text-gray-600">${label}</span><span class="font-medium">${value}</span></div>`;
+  }
+
+  function ScreenPreis(){
+    kalkulierePreis();
+    const p = state.preis;
+    const produktSpec = JSON.stringify(state.spezifika[state.produkt?.toLowerCase()?.includes('balkon')?'balkon': state.produkt==='Geländer'?'gelaender': state.produkt?.toLowerCase()]||{}, null, 2);
+
+    return `
+      ${Section({
+        title:'Preis & Zusammenfassung',
+        right: `<button class="btn" onclick="encodeState(); navigator.clipboard.writeText(state.meta.link); alert('Projektlink in die Zwischenablage kopiert.');">Projektlink kopieren</button>`,
+        body: `
+          <div class="grid md:grid-cols-2 gap-6">
+            <div>
+              <div class="font-medium mb-2">Projekt</div>
+              <div class="text-sm text-gray-700">${state.projekt.name||'-'} · ${state.produkt||'-'}</div>
+              <div class="text-sm text-gray-600">${(state.projekt.plz||'') + (state.projekt.ort?(' '+state.projekt.ort):'')} · ${state.projekt.typ}</div>
+              <div class="mt-3">
+                <div class="font-medium">Spezifikation</div>
+                <pre class="bg-gray-50 p-3 rounded-xl border overflow-auto text-xs">${produktSpec}</pre>
+              </div>
+              ${(state.projekt.fotos||[]).length?`
+                <div class="mt-3">
+                  <div class="font-medium">Bilder</div>
+                  <div class="mt-2 grid grid-cols-2 sm:grid-cols-4 gap-2">${(state.projekt.fotos||[]).slice(0,8).map(src=>`<img src="${src}" class="w-full h-20 object-cover rounded-xl border"/>`).join('')}</div>
+                </div>`:''}
+            </div>
+            <div class="card p-4">
+              <div class="font-medium mb-2">Kalkulation (unverbindliche Vorabschätzung)</div>
+              ${SummaryBox('Material', formatEuro(p.material))}
+              ${SummaryBox('Fertigung (Meister)', formatEuro(p.fertigungMeister))}
+              ${SummaryBox('Fertigung (Geselle)', formatEuro(p.fertigungGeselle))}
+              ${SummaryBox('Oberfläche', formatEuro(p.oberflaeche))}
+              ${SummaryBox('Montage (Anfahrt/Hebezeuge opt.)', formatEuro(p.montage))}
+              <hr class="my-2"/>
+              ${SummaryBox('Summe netto', formatEuro(p.summeNetto))}
+              ${SummaryBox('MwSt. 19 %', formatEuro(p.mwst))}
+              <div class="flex items-center justify-between py-1 text-lg">
+                <span class="font-semibold">Gesamtbetrag</span><span class="font-semibold">${formatEuro(p.summeBrutto)}</span>
+              </div>
+              <div class="hint mt-2">Preis ist eine Vorabschätzung. Verbindliches Angebot erfolgt nach Aufmaß & technischer Prüfung (DIN EN 1090 u. a.).</div>
+              <div class="mt-3 flex flex-wrap gap-2">
+                <button class="btn btn-primary" onclick="sendeAnfrage()">Anfrage mit Richtpreis senden</button>
+                <button class="btn" onclick="exportPDF()">PDF‑Angebotsentwurf erstellen</button>
+                <button class="btn" onclick="encodeState(); navigator.clipboard.writeText(state.meta.link); alert('Projektlink in die Zwischenablage kopiert.');">Projektlink teilen</button>
+              </div>
+            </div>
+          </div>
+        `
+      })}
+
+      ${Section({
+        title:'PDF-/E‑Mail‑Textbausteine',
+        body: `
+          <div id="pdf-area" class="hidden"></div>
+          <div class="text-sm text-gray-700">
+            <div class="font-medium">PDF Titel</div>
+            <div>„Angebotsentwurf – Schlosserei Chromik GbR“</div>
+            <div class="font-medium mt-3">Einleitung</div>
+            <div>„Vielen Dank für Ihre Anfrage. Auf Basis Ihrer Angaben erhalten Sie einen unverbindlichen Richtpreis. Nach einem Vor‑Ort‑Aufmaß erstellen wir ein verbindliches Angebot gemäß DIN EN 1090 und den geltenden Normen.“</div>
+            <div class="font-medium mt-3">Positionsdarstellung (automatisch)</div>
+            <ul class="list-disc ml-5">
+              <li>Pos. 1: Produkt + Spezifikation (Maße, Material, Oberfläche)</li>
+              <li>Pos. 2: Geländer/Glas (falls gewählt)</li>
+              <li>Pos. 3: Oberfläche</li>
+              <li>Pos. 4: Montage/Anfahrt</li>
+            </ul>
+            <div class="mt-2">Zwischensumme, MwSt., Gesamtbetrag</div>
+            <div class="mt-2">Hinweise: „Preisgültigkeit: 30 Tage“ · „Ausführung: ca. X–Y Wochen nach Auftragsklarheit“ · „Exkl. bauseitige Vorleistungen (Strom, Kran, Gerüst, Abdichtungen) – falls notwendig.“</div>
+            <div class="font-medium mt-3">E‑Mail‑Begleittext (kurz)</div>
+            <div>„Guten Tag {Name}, anbei Ihr unverbindlicher Richtpreis zu {Projektname}. Für ein verbindliches Angebot schlagen wir einen Vor‑Ort‑Termin zum Aufmaß vor. Teilen Sie uns gern Ihre Terminwünsche mit.“</div>
+          </div>
+        `
+      })}
+
+      <div class="flex gap-3 pt-2">
+        <button class="btn" onclick="back()">Zurück</button>
+        <button class="btn btn-primary" onclick="setStep(5)">Abschließen</button>
+      </div>
+    `;
+  }
+
+  function ScreenSuccess(){
+    const link = encodeState();
+    return `
+      ${Section({
+        title:'Vielen Dank! Wir melden uns.',
+        body:`
+          <p class="text-gray-700">Ihr Projekt <b>${state.projekt.name||''}</b> ist bei uns eingegangen. Sie erhalten innerhalb von 1–2 Werktagen eine Rückmeldung mit Terminvorschlägen fürs Aufmaß.</p>
+          <div class="flex flex-wrap gap-3 mt-2">
+            <button class="btn btn-primary" onclick="exportPDF()">Projekt‑PDF herunterladen</button>
+            <button class="btn" onclick="navigator.clipboard.writeText('${link}'); alert('Link kopiert.');">Link kopieren</button>
+            <button class="btn" onclick="location.href = location.origin + location.pathname;">Neues Projekt starten</button>
+          </div>
+        `
+      })}
+    `;
+  }
+
+  // PDF Export (einfacher Entwurf)
+  function exportPDF(){
+    kalkulierePreis();
+    const p = state.preis;
+    const wrap = document.createElement('div');
+    wrap.className = 'p-6';
+    wrap.innerHTML = `
+      <div style="font-family:Arial, sans-serif;">
+        <h1 style="font-size:20px; margin:0 0 8px;">Angebotsentwurf – Schlosserei Chromik GbR</h1>
+        <div style="font-size:12px; color:#4b5563;">${new Date().toLocaleDateString('de-DE')}</div>
+        <hr style="margin:12px 0;"/>
+        <div style="font-size:14px;">
+          <b>Projekt:</b> ${state.projekt.name||'-'} – ${state.produkt||'-'}<br/>
+          <b>Ort:</b> ${state.projekt.plz||''} ${state.projekt.ort||''} · ${state.projekt.typ}
+        </div>
+        <p style="margin-top:8px; font-size:12px;">Vielen Dank für Ihre Anfrage. Auf Basis Ihrer Angaben erhalten Sie einen unverbindlichen Richtpreis. Nach einem Vor‑Ort‑Aufmaß erstellen wir ein verbindliches Angebot gemäß DIN EN 1090 und den geltenden Normen.</p>
+        <h2 style="font-size:16px; margin:12px 0 6px;">Positionen</h2>
+        <ol style="font-size:13px; padding-left:18px;">
+          <li>Produkt + Spezifikation (siehe unten)</li>
+          <li>Geländer/Glas (falls gewählt)</li>
+          <li>Oberfläche</li>
+          <li>Montage/Anfahrt</li>
+        </ol>
+        <pre style="background:#f8fafc; border:1px solid #e5e7eb; border-radius:10px; padding:10px; font-size:11px; white-space:pre-wrap;">${JSON.stringify(state.spezifika, null, 2)}</pre>
+        <h2 style="font-size:16px; margin:12px 0 6px;">Kalkulation</h2>
+        <table style="width:100%; font-size:13px; border-collapse:collapse;">
+          <tr><td>Material</td><td style="text-align:right;">${formatEuro(p.material)}</td></tr>
+          <tr><td>Fertigung (Meister)</td><td style="text-align:right;">${formatEuro(p.fertigungMeister)}</td></tr>
+          <tr><td>Fertigung (Geselle)</td><td style="text-align:right;">${formatEuro(p.fertigungGeselle)}</td></tr>
+          <tr><td>Oberfläche</td><td style="text-align:right;">${formatEuro(p.oberflaeche)}</td></tr>
+          <tr><td>Montage</td><td style="text-align:right;">${formatEuro(p.montage)}</td></tr>
+          <tr><td colspan="2"><hr/></td></tr>
+          <tr><td><b>Summe netto</b></td><td style="text-align:right;"><b>${formatEuro(p.summeNetto)}</b></td></tr>
+          <tr><td>MwSt. 19 %</td><td style="text-align:right;">${formatEuro(p.mwst)}</td></tr>
+          <tr><td><b>Gesamtbetrag</b></td><td style="text-align:right;"><b>${formatEuro(p.summeBrutto)}</b></td></tr>
+        </table>
+        <p style="margin-top:8px; font-size:12px;">Preisgültigkeit: 30 Tage · Ausführung: ca. X–Y Wochen nach Auftragsklarheit · Exkl. bauseitige Vorleistungen (Strom, Kran, Gerüst, Abdichtungen) – falls notwendig.</p>
+      </div>
+    `;
+    html2pdf().from(wrap).set({ filename: `Angebotsentwurf_${(state.projekt.name||'Projekt').replace(/\s+/g,'_')}.pdf`, html2canvas: { scale: 2 } }).save();
+  }
+
+  function sendeAnfrage(){
+    alert('Vielen Dank! Ihre Anfrage mit Richtpreis wurde vorbereitet. Bitte senden Sie uns diese PDF per E‑Mail an info@schlosserei-chromik.de oder rufen Sie uns an.');
+  }
+
+  // Render Switcher
+  function render(){
+    document.querySelectorAll('[data-step-indicator]').forEach(el=>{
+      const idx = Number(el.getAttribute('data-step-indicator'));
+      el.classList.toggle('ring-2', idx===state.step);
+      el.classList.toggle('ring-gray-700', idx===state.step);
+      el.classList.toggle('bg-gray-900/5', idx===state.step);
+    });
+
+    const screens = [ScreenStart, ScreenProduktauswahl, ScreenProjektdaten, ScreenSpezifika, ScreenPreis, ScreenSuccess];
+    $app.innerHTML = screens[state.step]();
+  }
+
+  // Initial
+  render();
+  </script>
+</body>
+</html>
